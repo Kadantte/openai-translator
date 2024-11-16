@@ -1,8 +1,8 @@
-import styles from 'inline:./index.css'
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import styles from './index.css?inline'
+
 interface IConfig {
-    highlight: string | RegExp
+    highlight: string | RegExp | string[]
 }
 
 export class HighlightInTextarea {
@@ -39,6 +39,7 @@ export class HighlightInTextarea {
 
         this.highlights = document.createElement('div')
         this.highlights.classList.add(this.ID + '-highlights', this.ID + '-content')
+        this.highlights.style.fontSize = window.getComputedStyle(this.el, null).getPropertyValue('font-size')
 
         this.backdrop = document.createElement('div')
         this.backdrop.classList.add(this.ID + '-backdrop')
@@ -148,7 +149,7 @@ export class HighlightInTextarea {
 
     public handleInput() {
         const input = this.el?.value
-        const ranges = this.getRanges(input, this.highlight)
+        const ranges = this.getRanges(input, this.highlight?.highlight ?? null)
         const unstaggeredRanges = this.removeStaggeredRanges(ranges)
         const boundaries = this.getBoundaries(unstaggeredRanges)
         this.renderMarks(boundaries)
@@ -180,7 +181,7 @@ export class HighlightInTextarea {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getRanges(input: string | undefined, highlight: IConfig | null): any {
+    getRanges(input: string | undefined, highlight: IConfig['highlight'] | null): any {
         const type = this.getType(highlight)
         switch (type) {
             case 'array':
@@ -345,7 +346,7 @@ export class HighlightInTextarea {
 
         // replace start tokens with opening <mark> tags with class name
         input = input.replace(/{{hit-mark-start\|(\d+)}}/g, (_match, subMatch) => {
-            const className = boundaries[+subMatch].className
+            const { className } = boundaries[+subMatch]
             if (className) {
                 return '<mark class="' + className + '">'
             } else {

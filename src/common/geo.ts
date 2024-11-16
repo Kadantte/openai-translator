@@ -1,6 +1,5 @@
-import { userscriptFetch } from './userscript-polyfill'
-import { isUserscript } from './utils'
 import { ALLOWED_COUNTRY_CODES } from './geo-data' // a separate file for bypassing spell check
+import { getUniversalFetch } from './universal-fetch'
 
 export interface IpLocation {
     supported: boolean
@@ -38,16 +37,13 @@ function parseResponse(response: string): OpenAICDNCGITraceResponse {
     return params as unknown as OpenAICDNCGITraceResponse
 }
 
-export async function getIpLocationInfo(): Promise<IpLocation> {
-    const fetch = isUserscript()
-        ? (url: string, details: RequestInit) => userscriptFetch(url, details, false)
-        : window.fetch
+const traceUrl = 'https://chat.openai.com/cdn-cgi/trace' // API endpoint of OpenAI's CDN that returns location information. No authentication needed.
 
-    const code = await fetch(
-        'https://chat.openai.com/cdn-cgi/trace', // API endpoint of OpenAI's CDN that returns location information. No authentication needed.
-        { cache: 'no-store' }
-    )
-        .then((response) => response.text() as string)
+export async function getIpLocationInfo(): Promise<IpLocation> {
+    const fetch = getUniversalFetch()
+
+    const code = await fetch(traceUrl, { cache: 'no-store' })
+        .then((response) => response.text())
         .then(parseResponse)
         .then((o) => o.loc || '')
         .catch(() => '')
